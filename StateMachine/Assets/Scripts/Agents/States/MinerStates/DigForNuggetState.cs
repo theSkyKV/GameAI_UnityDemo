@@ -19,7 +19,7 @@ namespace Agents.States.MinerStates
 				agent.StateMachine.ChangeState(new GoToLocationState(mine));
 			}
 
-			_elapsedTime = Cooldown;
+			_elapsedTime = 0;
 		}
 
 		public override void Execute(Miner agent)

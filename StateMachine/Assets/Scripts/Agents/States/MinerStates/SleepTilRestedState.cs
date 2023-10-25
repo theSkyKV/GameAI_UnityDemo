@@ -19,7 +19,7 @@ namespace Agents.States.MinerStates
 				agent.StateMachine.ChangeState(new GoToLocationState(home));
 			}
 
-			_elapsedTime = Cooldown;
+			_elapsedTime = 0;
 		}
 
 		public override void Execute(Miner agent)
@@ -50,6 +50,13 @@ namespace Agents.States.MinerStates
 
 		public override bool OnMessage(Miner agent, Telegram message)
 		{
+			switch(message.Message)
+			{
+				case MessageType.StewReady:
+					agent.StateMachine.ChangeState(new EatStewState());
+					return true;
+			}
+
 			return false;
 		}
 	}

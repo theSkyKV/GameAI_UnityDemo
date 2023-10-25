@@ -30,6 +30,9 @@ namespace Agents.States.MinerStates
 				{
 					case Home:
 						agent.StateMachine.ChangeState(new SleepTilRestedState());
+						Debug.Log("Hi honey I'm home");
+						agent.GameWorld.MessageDispatcher.DispatchMessage(agent, 
+							agent.GameWorld.MinersWife, MessageType.HiHoneyImHome);
 						break;
 					case Tavern:
 						agent.StateMachine.ChangeState(new QuenchThirstState());

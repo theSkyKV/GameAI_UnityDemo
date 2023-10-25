@@ -8,6 +8,9 @@ namespace Agents.States.MinerStates
 {
 	public class DepositGoldState : State<Miner>
 	{
+		private float _elapsedTime;
+		private const float Cooldown = 2.0f;
+
 		public override void Enter(Miner agent)
 		{
 			if (agent.Location is not Bank)
@@ -15,10 +18,18 @@ namespace Agents.States.MinerStates
 				var bank = agent.GameWorld.Locations.FirstOrDefault(l => l is Bank);
 				agent.StateMachine.ChangeState(new GoToLocationState(bank));
 			}
+
+			_elapsedTime = 0;
 		}
 
 		public override void Execute(Miner agent)
 		{
+			if (_elapsedTime < Cooldown)
+			{
+				_elapsedTime += Time.deltaTime;
+				return;
+			}
+
 			agent.AddToMoneyInBank(agent.GoldCarried);
 			agent.AddToGoldCarried(-agent.GoldCarried);
 			agent.IncreaseThirst();

@@ -3,6 +3,7 @@ using Entities;
 using FSM;
 using GameWorlds;
 using Locations;
+using Messaging;
 using System.Linq;
 
 namespace Agents
@@ -31,10 +32,10 @@ namespace Agents
 		public void Init(GameWorld gameWorld)
 		{
 			GameWorld = gameWorld;
-			var home = gameWorld.Locations.FirstOrDefault(l => l is Home);
+			var mine = gameWorld.Locations.FirstOrDefault(l => l is Mine);
 
 			StateMachine = new StateMachine<Miner>(this);
-			StateMachine.ChangeState(new GoToLocationState(home));
+			StateMachine.ChangeState(new GoToLocationState(mine));
 		}
 
 		private void Update()
@@ -106,6 +107,11 @@ namespace Agents
 		{
 			_thirst = 0;
 			MoneyInBank -= 2;
+		}
+
+		public override bool HandleMessage(Telegram message)
+		{
+			return StateMachine.HandleMessage(message);
 		}
 	}
 }

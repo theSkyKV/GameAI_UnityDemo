@@ -26,7 +26,7 @@ namespace Messaging
 			DispatchTime = -1;
 		}
 
-		public Telegram(BaseEntity sender, BaseEntity receiver, MessageType message, float dispatchTime)
+		public Telegram(BaseEntity sender, BaseEntity receiver, MessageType message, float dispatchTime = -1)
 		{
 			Sender = sender;
 			Receiver = receiver;

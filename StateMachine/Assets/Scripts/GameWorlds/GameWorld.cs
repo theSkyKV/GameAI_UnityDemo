@@ -1,5 +1,6 @@
 ﻿using Agents;
 using Locations;
+using Messaging;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,18 +8,21 @@ namespace GameWorlds
 {
 	public class GameWorld : MonoBehaviour
 	{
-		private Miner _miner;
-		private MinersWife _minersWife;
+		public Miner Miner { get; private set; }
+		public MinersWife MinersWife { get; private set; }
+		public MessageDispatcher MessageDispatcher { get; private set; }
 
 		private Location[] _locations;
 		public IReadOnlyCollection<Location> Locations => _locations;
 
 		private void Awake()
 		{
-			_miner = FindAnyObjectByType<Miner>(FindObjectsInactive.Include);
-			_minersWife = FindAnyObjectByType<MinersWife>(FindObjectsInactive.Include);
+			MessageDispatcher = new MessageDispatcher();
+			Miner = FindAnyObjectByType<Miner>(FindObjectsInactive.Include);
+			MinersWife = FindAnyObjectByType<MinersWife>(FindObjectsInactive.Include);
 			_locations = FindObjectsByType<Location>(FindObjectsSortMode.None);
-			_miner.Init(this);
+			Miner.Init(this);
+			MinersWife.Init(this);
 		}
 	}
 }

@@ -52,6 +52,11 @@ namespace FSM
 			GlobalState.Enter(_owner);
 		}
 
+		public void RevertToPreviousState()
+		{
+			ChangeState(PreviousState);
+		}
+
 		public bool HandleMessage(Telegram message)
 		{
 			if (CurrentState != null && CurrentState.OnMessage(_owner, message))
