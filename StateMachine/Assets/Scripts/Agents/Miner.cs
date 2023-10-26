@@ -21,7 +21,7 @@ namespace Agents
 		public float MovementSpeed => 5.0f;
 
 		// the amount of gold a miner must have before he feels he can go home
-		public int ComfortLevel => 5;
+		public int ComfortLevel => 4;
 		// the amount of nuggets a miner can carry
 		public int MaxNuggets => 3;
 		// above this value a miner is thirsty

@@ -9,7 +9,7 @@ namespace Agents.States.MinerStates
 	public class DepositGoldState : State<Miner>
 	{
 		private float _elapsedTime;
-		private const float Cooldown = 2.0f;
+		private const float Cooldown = 1.0f;
 
 		public override void Enter(Miner agent)
 		{
