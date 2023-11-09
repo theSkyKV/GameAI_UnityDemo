@@ -1,3 +1,4 @@
+using GameWorlds;
 using SteeringBehaviours;
 using UnityEngine;
 
@@ -19,10 +20,15 @@ namespace Agents
 		public float Speed => Velocity.magnitude;
 		public float MaxSpeed { get; private set; } = 5.0f;
 		public Agent Target => _target;
+		public GameWorld GameWorld { get; private set; }
+		public float MinDetectionBoxLength { get; private set; } = 5.0f;
+		public float DetectionBoxRadius { get; private set; }
 
-		private void Awake()
+		public void Init(GameWorld gameWorld)
 		{
 			_steering.Init(this);
+			GameWorld = gameWorld;
+			DetectionBoxRadius = transform.localScale.x / 2;
 		}
 
 		private void Update()

@@ -1,4 +1,6 @@
 ﻿using Agents;
+using GameWorlds;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace SteeringBehaviours
@@ -28,6 +30,10 @@ namespace SteeringBehaviours
 		[SerializeField]
 		[Min(0f)]
 		private float _weightWander = 1.0f;
+
+		[SerializeField]
+		[Min(0f)]
+		private float _weightObstacleAvoidance = 1.0f;
 
 		private Agent _agent;
 
@@ -62,6 +68,7 @@ namespace SteeringBehaviours
 			force += Pursuit(_agent.Target) * _weightPursuit;
 			force += Evade(_agent.Target) * _weightEvade;
 			force += Wander() * _weightWander;
+			force += ObstacleAvoidance(_agent.GameWorld.Obstacles) * _weightObstacleAvoidance;
 
 			return force;
 		}
@@ -132,6 +139,68 @@ namespace SteeringBehaviours
 			_wanderTarget *= WanderRadius;
 			var target = _wanderTarget + Vector3.forward * WanderDistance;
 			return target - _agent.transform.position;
+		}
+
+		private Vector3 ObstacleAvoidance(IReadOnlyCollection<Obstacle> obstacles)
+		{
+			var detectionBoxLength = _agent.MinDetectionBoxLength *	(1 + _agent.Speed / _agent.MaxSpeed);
+			_agent.GameWorld.TagObstaclesWithinViewRange(_agent, detectionBoxLength);
+
+			Obstacle closestIntersectingObstacle = null;
+			var distanceToClosestObstacle = float.MaxValue;
+			Vector3 localPosOfClosestObstacle = new Vector3();
+
+			foreach (var obstacle in obstacles)
+			{
+				if (!obstacle.IsTagged)
+					continue;
+
+				var head = _agent.transform.forward;
+				var side = _agent.transform.right;
+				var pos = _agent.transform.position;
+
+				var obstacleX = obstacle.transform.position.x;
+				var obstacleZ = obstacle.transform.position.z;
+
+				var localZ = obstacleZ * head.z + obstacleX * head.x - Vector3.Dot(pos, head);
+				var localX = obstacleZ * side.z + obstacleX * side.x - Vector3.Dot(pos, side);
+
+				if (localZ < 0)
+					continue;
+
+				var localPos = new Vector3(localX, 0, localZ);
+
+				var expandedRadius = obstacle.Radius + _agent.DetectionBoxRadius;
+				if (localX >= expandedRadius)
+					continue;
+
+				var sqrtPart = Mathf.Sqrt(expandedRadius * expandedRadius - localX * localX);
+				var ip = localZ - sqrtPart;
+				if (ip <= 0)
+					ip = localZ + sqrtPart;
+
+				if (ip < distanceToClosestObstacle)
+				{
+					distanceToClosestObstacle = ip;
+					closestIntersectingObstacle = obstacle;
+					localPosOfClosestObstacle = localPos;
+				}
+			}
+
+			if (closestIntersectingObstacle == null)
+				return Vector3.zero;
+
+			Vector3 steeringForce = new Vector3();
+
+			var multiplier = 1.0f + (detectionBoxLength - localPosOfClosestObstacle.z) / detectionBoxLength;
+
+			steeringForce.x = (closestIntersectingObstacle.Radius - localPosOfClosestObstacle.x) * multiplier;
+
+			var brakingWeight = 0.2f;
+
+			steeringForce.z = (closestIntersectingObstacle.Radius - localPosOfClosestObstacle.z) * brakingWeight;
+
+			return transform.TransformVector(steeringForce);
 		}
 	}
 }
