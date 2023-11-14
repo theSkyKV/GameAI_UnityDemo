@@ -1,4 +1,5 @@
 ﻿using Agents;
+using Common.Geometry;
 using GameWorlds;
 using System.Collections.Generic;
 using UnityEngine;
@@ -155,33 +156,24 @@ namespace SteeringBehaviours
 				if (!obstacle.IsTagged)
 					continue;
 
-				var head = _agent.transform.forward;
-				var side = _agent.transform.right;
-				var pos = _agent.transform.position;
+				var obstaclePos = obstacle.transform.position;
+				var localPos = Transformation.VectorToLocalSpace(obstaclePos, _agent.transform);
 
-				var obstacleX = obstacle.transform.position.x;
-				var obstacleZ = obstacle.transform.position.z;
-
-				var localZ = obstacleZ * head.z + obstacleX * head.x - Vector3.Dot(pos, head);
-				var localX = obstacleZ * side.z + obstacleX * side.x - Vector3.Dot(pos, side);
-
-				if (localZ < 0)
+				if (localPos.z < 0)
 					continue;
-
-				var localPos = new Vector3(localX, 0, localZ);
 
 				var expandedRadius = obstacle.Radius + _agent.DetectionBoxRadius;
-				if (localX >= expandedRadius)
+				if (localPos.x >= expandedRadius)
 					continue;
 
-				var sqrtPart = Mathf.Sqrt(expandedRadius * expandedRadius - localX * localX);
-				var ip = localZ - sqrtPart;
-				if (ip <= 0)
-					ip = localZ + sqrtPart;
+				var sqrtPart = Mathf.Sqrt(expandedRadius * expandedRadius - localPos.x * localPos.x);
+				var intersectionPoint = localPos.z - sqrtPart;
+				if (intersectionPoint <= 0)
+					intersectionPoint = localPos.z + sqrtPart;
 
-				if (ip < distanceToClosestObstacle)
+				if (intersectionPoint < distanceToClosestObstacle)
 				{
-					distanceToClosestObstacle = ip;
+					distanceToClosestObstacle = intersectionPoint;
 					closestIntersectingObstacle = obstacle;
 					localPosOfClosestObstacle = localPos;
 				}
@@ -200,7 +192,7 @@ namespace SteeringBehaviours
 
 			steeringForce.z = (closestIntersectingObstacle.Radius - localPosOfClosestObstacle.z) * brakingWeight;
 
-			return transform.TransformVector(steeringForce);
+			return Transformation.VectorToWorldSpace(steeringForce, _agent.transform);
 		}
 	}
 }
