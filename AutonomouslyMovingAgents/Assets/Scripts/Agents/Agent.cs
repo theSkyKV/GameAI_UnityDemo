@@ -14,6 +14,10 @@ namespace Agents
 		private float _mass = 1.0f;
 
 		[SerializeField]
+		[Min(0.01f)]
+		private float _maxForce = 1.0f;
+
+		[SerializeField]
 		private SteeringBehaviour _steering;
 
 		public Vector3 Velocity { get; private set; } = Vector3.zero;
@@ -35,6 +39,7 @@ namespace Agents
 		{
 			Vector3 steeringForce;
 			steeringForce = _steering.Calculate();
+			steeringForce = Vector3.ClampMagnitude(steeringForce, _maxForce);
 			var acceleration = steeringForce / _mass;
 			Velocity += acceleration * Time.deltaTime;
 			Velocity = Vector3.ClampMagnitude(Velocity, MaxSpeed);

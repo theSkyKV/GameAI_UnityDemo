@@ -36,6 +36,14 @@ namespace SteeringBehaviours
 		[Min(0f)]
 		private float _weightObstacleAvoidance = 1.0f;
 
+		[SerializeField]
+		[Min(0f)]
+		private float _weightWallAvoidance = 1.0f;
+
+		[SerializeField]
+		[Min(0f)]
+		private float _weightHide = 1.0f;
+
 		private Agent _agent;
 
 		private Vector3 _wanderTarget = Vector3.zero;
@@ -70,6 +78,8 @@ namespace SteeringBehaviours
 			force += Evade(_agent.Target) * _weightEvade;
 			force += Wander() * _weightWander;
 			force += ObstacleAvoidance(_agent.GameWorld.Obstacles) * _weightObstacleAvoidance;
+			force += WallAvoidance(_agent.GameWorld.Walls) * _weightWallAvoidance;
+			force += Hide(_agent.Target, _agent.GameWorld.Obstacles) * _weightHide;
 
 			return force;
 		}
@@ -139,7 +149,8 @@ namespace SteeringBehaviours
 			_wanderTarget.Normalize();
 			_wanderTarget *= WanderRadius;
 			var target = _wanderTarget + Vector3.forward * WanderDistance;
-			return target - _agent.transform.position;
+			
+			return Transformation.VectorToWorldSpace(target, _agent.transform) - _agent.transform.position;
 		}
 
 		private Vector3 ObstacleAvoidance(IReadOnlyCollection<Obstacle> obstacles)
@@ -193,6 +204,62 @@ namespace SteeringBehaviours
 			steeringForce.z = (closestIntersectingObstacle.Radius - localPosOfClosestObstacle.z) * brakingWeight;
 
 			return Transformation.VectorToWorldSpace(steeringForce, _agent.transform);
+		}
+
+		private Vector3 WallAvoidance(IReadOnlyCollection<Wall> walls)
+		{
+			Wall closestWall = null;
+			var distanceToClosestWall = float.MaxValue;
+
+			foreach (var wall in walls)
+			{
+				Vector3 toWall = Intersection.GetPerpendicularToWall(wall, _agent.transform);
+				var dist = toWall.magnitude;
+
+				if (dist < 3.0f && distanceToClosestWall > dist)
+				{
+					distanceToClosestWall = dist;
+					closestWall = wall;
+				}
+			}
+
+			if (closestWall == null)
+				return Vector3.zero;
+
+			var force = closestWall.N * distanceToClosestWall;
+
+			return force;
+		}
+
+		private Vector3 Hide(Agent hunter, IReadOnlyCollection<Obstacle> obstacles)
+		{
+			var distanceToClosestObstacle = float.MaxValue;
+			var bestHidingSpot = new Vector3();
+
+			foreach (var obstacle in obstacles)
+			{
+				var hidingSpot = GetHidingPosition(obstacle, hunter.transform.position);
+				var dist = hidingSpot.sqrMagnitude;
+
+				if (distanceToClosestObstacle > dist)
+				{
+					distanceToClosestObstacle = dist;
+					bestHidingSpot = hidingSpot;
+				}
+			}
+
+			if (distanceToClosestObstacle == float.MaxValue)
+				return Evade(hunter);
+
+			return Arrive(bestHidingSpot, Deceleration.Fast);
+		}
+
+		private Vector3 GetHidingPosition(Obstacle obstacle, Vector3 hunterPosition)
+		{
+			var distanceFromBoundary = 1.5f;
+			var distanceAway = obstacle.Radius + distanceFromBoundary;
+			var toObstacle = Vector3.Normalize(obstacle.transform.position - hunterPosition);
+			return obstacle.transform.position + toObstacle * distanceAway;
 		}
 	}
 }
